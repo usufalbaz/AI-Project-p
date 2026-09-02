@@ -30,21 +30,26 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Logo & Title */}
         <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 border border-cyan-400/30">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 border border-cyan-400/30 flex-shrink-0">
               <Cpu className="w-6 h-6 text-white" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
-                  منصة مهندسي وباحثي الذكاء الاصطناعي
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-black text-xl tracking-tight bg-gradient-to-r from-cyan-300 via-white to-blue-200 bg-clip-text text-transparent">
+                  JINNA 5
                 </span>
-                <span className="hidden sm:inline-block px-2 py-0.5 text-xs font-semibold uppercase tracking-wider rounded-full bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">
+                <span className="px-2 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-wider rounded-md bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
                   AI Systems & LLMs
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
-                من عتاد الحوسبة والرياضيات إلى تدريب وتشغيل النماذج الضخمة (LLMs)
-              </p>
+              <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5 flex-wrap">
+                <span className="text-slate-400">تم التطوير بواسطة</span>
+                <span className="text-cyan-300 font-bold">المهندس يوسف الباز</span>
+                <span className="text-slate-600 hidden sm:inline">•</span>
+                <span className="text-indigo-300 font-mono text-[10px] sm:text-[11px] bg-indigo-950/50 px-1.5 py-0.2 rounded border border-indigo-500/20">
+                  Automation Ai Yousuf Albaz
+                </span>
+              </div>
             </div>
           </div>
 

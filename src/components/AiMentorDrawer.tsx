@@ -4,6 +4,7 @@ import {
   Copy, Check, Code2, AlertCircle, RefreshCw 
 } from 'lucide-react';
 import { ChatMessage, Lesson, Chapter } from '../types';
+import { getLocalMentorResponse } from '../utils/aiMentorFallback';
 
 interface AiMentorDrawerProps {
   isOpen: boolean;
@@ -22,8 +23,8 @@ export const AiMentorDrawer: React.FC<AiMentorDrawerProps> = ({
     {
       id: 'welcome',
       role: 'assistant',
-      content: `مرحباً بك يا زميلي في منصة أبحاث وهندسة الذكاء الاصطناعي (AI Research & Systems Platform)!
-أنا المساعد الذكي المتقدم (AI Principal Mentor)، ومزود بنمط التفكير فائق العمق (High Thinking Mode) للإجابة على أصعب المسائل:
+      content: `مرحباً بك يا زميلي في منصة JINNA 5 لأبحاث وهندسة الذكاء الاصطناعي (المطورة بواسطة المهندس يوسف الباز - Automation Ai Yousuf Albaz)!
+أنا المساعد الذكي المتقدم (JINNA 5 Principal AI Mentor)، ومزود بنمط التفكير فائق العمق (High Thinking Mode) للإجابة على أصعب المسائل:
 - تفكيك المعادلات الرياضية المعقدة (SVD, Backprop, Attention, RoPE, DPO).
 - تحليل أبعاد التنسورات ومحاكاة استهلاك الـ VRAM في عناقيد الـ GPUs.
 - تحضيرك لأسئلة المقابلات الهندسية الدقيقة في كبرى الشركات (Meta, OpenAI, Google DeepMind).
@@ -62,39 +63,63 @@ export const AiMentorDrawer: React.FC<AiMentorDrawerProps> = ({
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/mentor/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: query,
-          chapterTitle: currentChapter?.title,
-          lessonTitle: currentLesson?.title,
-          contextCode: currentLesson?.pythonCode?.code,
-          useThinking
-        })
-      });
+      let replyText = '';
+      try {
+        const res = await fetch('/api/mentor/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: query,
+            chapterTitle: currentChapter?.title,
+            lessonTitle: currentLesson?.title,
+            contextCode: currentLesson?.pythonCode?.code,
+            useThinking
+          })
+        });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'فشل الاتصال بالمساعد الذكي');
+        const contentType = res.headers.get('content-type') || '';
+        if (res.ok && contentType.includes('application/json')) {
+          const data = await res.json();
+          if (data && data.reply) {
+            replyText = data.reply;
+          }
+        }
+      } catch (networkErr) {
+        console.warn('API endpoint unreachable, using embedded mentor engine:', networkErr);
+      }
+
+      if (!replyText) {
+        replyText = getLocalMentorResponse(
+          query,
+          currentLesson?.title,
+          currentChapter?.title,
+          currentLesson?.pythonCode?.code
+        );
       }
 
       const assistantMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.reply || 'تمت معالجة الاستفسار بنجاح.',
+        content: replyText,
         timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
         isThinking: useThinking
       };
       setMessages(prev => [...prev, assistantMsg]);
-    } catch (err: any) {
-      const errorMsg: ChatMessage = {
+    } catch {
+      const fallbackMsg = getLocalMentorResponse(
+        query,
+        currentLesson?.title,
+        currentChapter?.title,
+        currentLesson?.pythonCode?.code
+      );
+      const assistantMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `عذراً، حدث خطأ: ${err.message || 'تعذر جلب الاستجابة حالياً'}. يرجى المحاولة مرة أخرى أو التأكد من توفر المفتاح في بيئة العمل.`,
-        timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+        content: fallbackMsg,
+        timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+        isThinking: useThinking
       };
-      setMessages(prev => [...prev, errorMsg]);
+      setMessages(prev => [...prev, assistantMsg]);
     } finally {
       setIsLoading(false);
     }
@@ -123,13 +148,13 @@ export const AiMentorDrawer: React.FC<AiMentorDrawerProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <h3 className="text-sm font-bold text-slate-100">المساعد الذكي (AI Systems Mentor)</h3>
+              <h3 className="text-sm font-bold text-slate-100">مساعد JINNA 5 الذكي (AI Systems Mentor)</h3>
               <span className="px-1.5 py-0.2 rounded text-[10px] bg-indigo-950/70 text-indigo-300 border border-indigo-700/50 font-mono">
                 Gemini 3.1 Pro
               </span>
             </div>
             <p className="text-[11px] text-slate-400">
-              {currentLesson ? `السياق: ${currentLesson.title}` : 'مرشدك المتخصص في أبحاث ونظم الذكاء الاصطناعي'}
+              {currentLesson ? `السياق: ${currentLesson.title}` : 'مرشد JINNA 5 المتخصص • م. يوسف الباز'}
             </p>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   BookOpen, Code2, Video, FileText, CheckCircle, Circle, 
   Sparkles, Clock, ChevronRight, ChevronLeft, ExternalLink, 
@@ -41,7 +42,13 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
   return (
     <main className="flex-1 bg-[#0A0A0C] p-4 lg:p-8 overflow-y-auto max-h-[88vh]">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <motion.div 
+        key={lesson.id}
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+        className="max-w-4xl mx-auto space-y-6"
+      >
         {/* Lesson Top Breadcrumb & Header */}
         <div className="space-y-3 pb-5 border-b border-white/[0.08]">
           <div className="flex items-center justify-between flex-wrap gap-2">
@@ -392,7 +399,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
             <ChevronLeft className="w-4 h-4" />
           </button>
         </div>
-      </div>
+      </motion.div>
     </main>
   );
 };

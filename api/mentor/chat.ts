@@ -1,41 +1,44 @@
-import express from "express";
-import path from "path";
-import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, ThinkingLevel } from "@google/genai";
-import dotenv from "dotenv";
 
-dotenv.config();
-
-const app = express();
-const PORT = 3000;
-
-app.use(express.json({ limit: "10mb" }));
-
-// Initialize Gemini Client
+let geminiClient: GoogleGenAI | null = null;
 const getGeminiClient = () => {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return null;
-  }
-  return new GoogleGenAI({
-    apiKey,
-    httpOptions: {
-      headers: {
-        "User-Agent": "aistudio-build",
+  if (!apiKey) return null;
+  if (!geminiClient) {
+    geminiClient = new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        headers: {
+          "User-Agent": "aistudio-build",
+        },
       },
-    },
-  });
+    });
+  }
+  return geminiClient;
 };
 
-// Health check endpoint
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", time: new Date().toISOString() });
-});
+export default async function handler(req: any, res: any) {
+  // Set CORS headers
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS,PATCH,DELETE,POST,PUT");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
+  );
 
-// AI Mentor API with High Thinking Mode for AI Research & Systems Engineering
-app.post("/api/mentor/chat", async (req, res) => {
+  if (req.method === "OPTIONS") {
+    res.status(200).end();
+    return;
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
   try {
-    const { message, lessonTitle, chapterTitle, contextCode, useThinking = true } = req.body;
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
+    const { message, lessonTitle, chapterTitle, contextCode, useThinking = true } = body;
 
     if (!message) {
       return res.status(400).json({ error: "الرسالة مطلوبة" });
@@ -59,7 +62,6 @@ ${contextCode ? `- الكود البرمجي المفتوح لدى الطالب 
     let responseText = "";
 
     if (ai) {
-      // If high thinking is requested, use gemini-3.1-pro-preview or fallback to gemini-2.5-flash
       if (useThinking) {
         try {
           const response = await ai.models.generateContent({
@@ -74,7 +76,6 @@ ${contextCode ? `- الكود البرمجي المفتوح لدى الطالب 
           });
           responseText = response.text || "تم توليد الاستجابة بنجاح.";
         } catch (proError: any) {
-          console.warn("Falling back to gemini-2.5-flash / gemini-3.8-flash:", proError.message);
           try {
             const fallbackResponse = await ai.models.generateContent({
               model: "gemini-2.5-flash",
@@ -83,7 +84,7 @@ ${contextCode ? `- الكود البرمجي المفتوح لدى الطالب 
             });
             responseText = fallbackResponse.text || "";
           } catch (flashErr: any) {
-            console.warn("Fallback model also failed, defaulting to local knowledge base");
+            console.warn("Fallback model also failed");
           }
         }
       } else {
@@ -100,7 +101,6 @@ ${contextCode ? `- الكود البرمجي المفتوح لدى الطالب 
       }
     }
 
-    // If Gemini client not available or quota limit reached, generate expert engineered answer
     if (!responseText) {
       responseText = `**[نظام المعرفة الهندسية المدمج - JINNA 5 | المهندس يوسف الباز]**\n\n` +
         `أهلاً بك يا زميلي. بخصوص استفسارك حول **${lessonTitle || chapterTitle || "هندسة النماذج اللغوية"}**:\n\n` +
@@ -112,80 +112,14 @@ ${contextCode ? `- الكود البرمجي المفتوح لدى الطالب 
         `   - **حالات المحسن (Optimizer States)**: في AdamW تتطلب 8 بايت لكل معامل (fp32 master weights + momentum + variance).\n` +
         `   - **ذاكرة التنشيط (Activations & KV Cache)**: تتضاعف خطياً مع طول السياق (Sequence Length).\n` +
         `3. **نصيحة المقابلات في الشركات الكبرى**: ركز دائماً على موازنة الـ FLOPs مقابل استهلاك الذاكرة (Memory-bound vs Compute-bound operations) واستخدام تقنيات مثل FlashAttention وZeRO-3.\n\n` +
-        `> 💡 **ملاحظة تفعيل المساعد الحي الكامل:** يمكنك تفعيل أحدث نماذج Gemini الفورية مجاناً بدون أي تكلفة من Google AI Studio (شاهد الدليل في ملف README).`;
+        `> 💡 **ملاحظة تفعيل المساعد الحي:** لتشغيل نماذج Gemini التوليدية المباشرة، تأكد من إضافة المتغير البيئي \`GEMINI_API_KEY\` في لوحة تحكم Vercel (Settings -> Environment Variables).`;
     }
 
-    return res.json({ reply: responseText });
+    return res.status(200).json({ reply: responseText });
   } catch (error: any) {
     console.error("AI Mentor error:", error);
     return res.status(500).json({
       error: error.message || "حدث خطأ أثناء معالجة الطلب عبر المساعد الذكي.",
     });
   }
-});
-
-// Code playground simulation endpoint (analyzes & simulates Python snippet logic)
-app.post("/api/code/simulate", async (req, res) => {
-  try {
-    const { code, lessonId } = req.body;
-    if (!code) {
-      return res.status(400).json({ error: "الكود مطلوب" });
-    }
-
-    const ai = getGeminiClient();
-    if (!ai) {
-      // Return static analysis simulation
-      return res.json({
-        output: "=== Python Simulation Sandbox (Local) ===\nCode syntax parsed successfully.\nExecuted without exceptions.",
-        analysis: "بيئة المحاكاة المحلية: الكود البرمجي سليم تركيبياً وجاهز للاختبار في PyTorch GPU Cluster.",
-      });
-    }
-
-    // Use Gemini 3.8 Flash for fast code execution simulation
-    const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
-      contents: `قم بمحاكاة ناتج تشغيل كود بايثون التالي بدقة متناهية كأنك مفسر Python 3.11 + PyTorch 2.4. 
-أخرج أولاً الناتج المتوقع في سطر (Output):
-ثم في سطر منفصل قدم تحليلاً موجزاً لتعقيد الذاكرة (Memory) وحسابات FLOPs وملاحظة هندسية.
-الكود:
-\`\`\`python
-${code}
-\`\`\``,
-      config: {
-        systemInstruction: "أنت محاكي بيئة بايثون وPyTorch فائقة الدقة مخصصة لنظم الذكاء الاصطناعي.",
-      },
-    });
-
-    return res.json({
-      result: response.text || "تم تشغيل الكود بنجاح.",
-    });
-  } catch (err: any) {
-    console.error("Simulation error:", err);
-    return res.json({
-      result: "=== Output ===\nProcess finished with exit code 0\n[Tensor Shape Check: Verified]",
-    });
-  }
-});
-
-// Vite middleware and static serving
-async function startServer() {
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
-    app.get("*", (_req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
-  }
-
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on port ${PORT}`);
-  });
 }
-
-startServer();

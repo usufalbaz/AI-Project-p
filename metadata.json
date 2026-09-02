@@ -1,6 +1,6 @@
 {
-  "name": "منصة تأهيل مهندسي وباحثي الذكاء الاصطناعي | AI Research & Systems Platform",
-  "description": "منصة تعليم وتأهيل متقدمة لمهندسي وباحثي الذكاء الاصطناعي من العتاد والرياضيات إلى بناء وتدريب وتشغيل النماذج الضخمة (LLMs)",
+  "name": "JINNA 5",
+  "description": "منصة JINNA 5 لهندسة وبحوث أنظمة الذكاء الاصطناعي وبناء وتدريب النماذج الضخمة (LLMs). تم التطوير بواسطة المهندس يوسف الباز (Automation Ai Yousuf Albaz)",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

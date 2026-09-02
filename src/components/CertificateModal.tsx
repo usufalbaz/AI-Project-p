@@ -72,13 +72,13 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
 
             <div>
               <span className="text-xs uppercase tracking-widest text-amber-400/90 font-mono font-semibold">
-                AI Research & Systems Engineering Fellowship
+                JINNA 5 • AI Research & Systems Engineering Fellowship
               </span>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white mt-2">
                 شهادة تأهيل مهندس وباحث ذكاء اصطناعي معتمد
               </h2>
               <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-lg mx-auto">
-                يشهد البرنامج بأن الزميل الباحث قد أتم بنجاح متطلبات المسار المتكامل لبناء وتدريب وتشغيل النماذج اللغوية الضخمة (LLMs) والأنظمة الموزعة.
+                يشهد برنامج <strong className="text-cyan-400">JINNA 5</strong> بأن الزميل الباحث قد أتم بنجاح متطلبات المسار المتكامل لبناء وتدريب وتشغيل النماذج اللغوية الضخمة (LLMs) والأنظمة الموزعة.
               </p>
             </div>
 
@@ -137,19 +137,20 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
 
             {/* Credential Meta Footer */}
             <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400 border-t border-white/[0.08]">
-              <div>
+              <div className="text-right">
                 <span className="block font-mono text-[10px] text-slate-500">معرف الاعتماد (Credential ID):</span>
-                <span className="font-mono text-amber-400 text-xs">AIRS-LLM-{Date.now().toString().slice(-8)}</span>
+                <span className="font-mono text-amber-400 text-xs">JINNA5-{Date.now().toString().slice(-8)}</span>
               </div>
-              <div>
+              <div className="text-center">
+                <span className="block text-[10px] text-slate-500">تم التطوير والإشراف الهندسي:</span>
+                <span className="font-semibold text-cyan-300 text-xs">المهندس يوسف الباز</span>
+                <span className="block font-mono text-[10px] text-indigo-300">Automation Ai Yousuf Albaz</span>
+              </div>
+              <div className="text-left">
                 <span className="block text-[10px] text-slate-500">نسبة الإنجاز المعتمدة:</span>
                 <span className="font-mono font-bold text-emerald-400 text-sm">
                   {percent}% مكتمل ({completedCount}/{stats.totalLessons} درس)
                 </span>
-              </div>
-              <div>
-                <span className="block text-[10px] text-slate-500">تاريخ الإصدار:</span>
-                <span className="font-mono text-slate-300 text-xs">{new Date().toLocaleDateString('ar-EG')}</span>
               </div>
             </div>
           </div>
