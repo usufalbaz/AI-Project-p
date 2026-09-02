@@ -10,6 +10,7 @@ import { ApiKeyModal, API_KEY_STORAGE_KEY } from './components/ApiKeyModal';
 import { DiplomaBanner } from './components/DiplomaBanner';
 import { DiplomaSyllabusModal } from './components/DiplomaSyllabusModal';
 import { StudentNotesDrawer } from './components/StudentNotesDrawer';
+import { InstructionsModal } from './components/InstructionsModal';
 import { allChapters, getLessonById } from './data/curriculumData';
 import { UserProgress } from './types';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
@@ -53,6 +54,7 @@ function AppContent() {
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const [isCertificateOpen, setIsCertificateOpen] = useState(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [isInstructionsOpen, setIsInstructionsOpen] = useState(false);
   const [isSyllabusOpen, setIsSyllabusOpen] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [activeQuizChapterId, setActiveQuizChapterId] = useState<number | null>(null);
@@ -157,6 +159,7 @@ function AppContent() {
         onOpenCertificate={() => setIsCertificateOpen(true)}
         onToggleAiMentor={() => setIsAiMentorOpen(prev => !prev)}
         onOpenApiKey={() => setIsApiKeyModalOpen(true)}
+        onOpenInstructions={() => setIsInstructionsOpen(true)}
         isApiKeyConfigured={!!apiKey}
         onSearchChange={setSearchQuery}
         searchQuery={searchQuery}
@@ -257,6 +260,12 @@ function AppContent() {
         onClose={() => setIsCertificateOpen(false)}
         progress={progress}
         onSaveName={handleSaveStudentName}
+      />
+
+      {/* Engineering Instructions File Modal (.md) */}
+      <InstructionsModal
+        isOpen={isInstructionsOpen}
+        onClose={() => setIsInstructionsOpen(false)}
       />
     </div>
   );

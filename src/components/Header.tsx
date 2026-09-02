@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, Calculator, Sparkles, BookOpen, CheckCircle2, Key } from 'lucide-react';
+import { Award, Calculator, Sparkles, BookOpen, CheckCircle2, Key, FileCode } from 'lucide-react';
 import { UserProgress } from '../types';
 import { getTotalCurriculumStats } from '../data/curriculumData';
 import { JinnaLogo } from './JinnaLogo';
@@ -12,6 +12,7 @@ interface HeaderProps {
   onOpenCertificate: () => void;
   onToggleAiMentor: () => void;
   onOpenApiKey: () => void;
+  onOpenInstructions?: () => void;
   isApiKeyConfigured: boolean;
   onSearchChange: (query: string) => void;
   searchQuery: string;
@@ -23,6 +24,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCertificate,
   onToggleAiMentor,
   onOpenApiKey,
+  onOpenInstructions,
   isApiKeyConfigured,
   onSearchChange,
   searchQuery
@@ -117,6 +119,25 @@ export const Header: React.FC<HeaderProps> = ({
               {isApiKeyConfigured ? '🟢' : 'ربط 🟡'}
             </span>
           </button>
+
+          {/* AI Instructions File Button */}
+          {onOpenInstructions && (
+            <button
+              onClick={onOpenInstructions}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all shadow-xs ${
+                isLight
+                  ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 hover:border-cyan-400'
+                  : 'bg-[#13141B] hover:bg-[#1A1C26] text-slate-200 border-white/[0.08] hover:border-cyan-500/40'
+              }`}
+              title="تحميل ملف التعليمات الموجه لـ AI Studio (Instructions)"
+            >
+              <FileCode className="w-4 h-4 text-cyan-400" />
+              <span className="hidden sm:inline">ملف التعليمات</span>
+              <span className="text-[10px] font-mono px-1 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                .md
+              </span>
+            </button>
+          )}
 
           {/* VRAM Calculator Button */}
           <button
