@@ -74,10 +74,10 @@ ${contextCode ? `- الكود البرمجي المفتوح لدى الطالب 
           });
           responseText = response.text || "تم توليد الاستجابة بنجاح.";
         } catch (proError: any) {
-          console.warn("Falling back to gemini-2.5-flash / gemini-3.8-flash:", proError.message);
+          console.warn("Falling back to gemini-3.6-flash / gemini-3.8-flash:", proError.message);
           try {
             const fallbackResponse = await ai.models.generateContent({
-              model: "gemini-2.5-flash",
+              model: "gemini-3.6-flash",
               contents: message,
               config: { systemInstruction },
             });
@@ -89,7 +89,7 @@ ${contextCode ? `- الكود البرمجي المفتوح لدى الطالب 
       } else {
         try {
           const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-3.6-flash",
             contents: message,
             config: { systemInstruction },
           });

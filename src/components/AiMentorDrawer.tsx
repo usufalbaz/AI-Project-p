@@ -95,35 +95,51 @@ export const AiMentorDrawer: React.FC<AiMentorDrawerProps> = ({
 
       // If backend was unreachable or returned empty, but user provided their Gemini API key, call Gemini directly!
       if (!replyText && apiKey) {
-        try {
-          const directRes = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                system_instruction: {
-                  parts: [{
-                    text: `أنت كبير مهندسي وباحثي الذكاء الاصطناعي لمنصة JINNA 5 المطورة بواسطة المهندس يوسف الباز (Automation Ai Yousuf Albaz). اشرح المفاهيم الهندسية، وفكك المعادلات الرياضية وأبعاد التنسورات، وأجب باحترافية عالية مع كود بايثون متقن.`
+        const preferredModel = (typeof window !== 'undefined' && localStorage.getItem('jinna_gemini_model')) || 'gemini-3.6-flash';
+        const candidateModels = Array.from(new Set([
+          preferredModel,
+          'gemini-3.6-flash',
+          'gemini-3.8-flash',
+          'gemini-2.0-flash',
+          'gemini-1.5-flash',
+          'gemini-2.5-flash'
+        ]));
+
+        for (const model of candidateModels) {
+          try {
+            const directRes = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  system_instruction: {
+                    parts: [{
+                      text: `أنت كبير مهندسي وباحثي الذكاء الاصطناعي لمنصة JINNA 5 المطورة بواسطة المهندس يوسف الباز (Automation Ai Yousuf Albaz). اشرح المفاهيم الهندسية، وفكك المعادلات الرياضية وأبعاد التنسورات، وأجب باحترافية عالية مع كود بايثون متقن.`
+                    }]
+                  },
+                  contents: [{
+                    parts: [{
+                      text: `السياق: درس (${currentLesson?.title || ''}) - فصل (${currentChapter?.title || ''}).\nسؤال المستخدم: ${query}`
+                    }]
                   }]
-                },
-                contents: [{
-                  parts: [{
-                    text: `السياق: درس (${currentLesson?.title || ''}) - فصل (${currentChapter?.title || ''}).\nسؤال المستخدم: ${query}`
-                  }]
-                }]
-              })
+                })
+              }
+            );
+            if (directRes.ok) {
+              const directData = await directRes.json();
+              const candidate = directData?.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (candidate) {
+                replyText = candidate;
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('jinna_gemini_model', model);
+                }
+                break;
+              }
             }
-          );
-          if (directRes.ok) {
-            const directData = await directRes.json();
-            const candidate = directData?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (candidate) {
-              replyText = candidate;
-            }
+          } catch (directErr) {
+            console.warn(`Direct Gemini API call failed on model ${model}:`, directErr);
           }
-        } catch (directErr) {
-          console.warn('Direct Gemini API call failed:', directErr);
         }
       }
 

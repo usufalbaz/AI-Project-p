@@ -50,31 +50,59 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
     setIsTesting(true);
     setTestResult(null);
 
-    try {
-      // Test directly against Gemini API endpoint
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${trimmed}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: 'قل كلمة واحدة: متصل' }] }]
-          })
-        }
-      );
+    // List of modern Gemini models in order of Google AI Studio availability
+    const candidateModels = [
+      'gemini-3.6-flash',
+      'gemini-3.8-flash',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash',
+      'gemini-2.5-flash'
+    ];
 
-      const data = await res.json();
-      if (res.ok && data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+    let lastError = '';
+    let successfulModel = '';
+
+    try {
+      for (const model of candidateModels) {
+        try {
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${trimmed}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: 'قل كلمة واحدة: متصل' }] }]
+              })
+            }
+          );
+
+          const data = await res.json();
+          if (res.ok && data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+            successfulModel = model;
+            break;
+          } else {
+            lastError = data?.error?.message || 'المفتاح غير صالح أو انتهت صلاحيته.';
+            // Stop early if key itself is completely invalid (not a model issue)
+            if (data?.error?.status === 'INVALID_ARGUMENT' && data?.error?.message?.includes('API key not valid')) {
+              break;
+            }
+          }
+        } catch (callErr: any) {
+          lastError = callErr.message || 'خطأ في الاتصال بخوادم Google';
+        }
+      }
+
+      if (successfulModel) {
+        localStorage.setItem('jinna_gemini_model', successfulModel);
         setTestResult({
           success: true,
-          message: '🟢 رائع! المفتاح صالح ويعمل بكفاءة فائقة (Gemini 2.5 Flash).'
+          message: `🟢 رائع! المفتاح صالح ويعمل بنجاح فائق باستخدام أحدث نموذج معتمد (${successfulModel}).`
         });
         onSaveApiKey(trimmed);
       } else {
-        const errMsg = data?.error?.message || 'المفتاح غير صالح أو انتهت صلاحيته.';
         setTestResult({
           success: false,
-          message: `فشل التحقق: ${errMsg}`
+          message: `فشل التحقق: ${lastError || 'المفتاح غير صالح أو غير متاح لهذا النموذج حالياً.'}`
         });
       }
     } catch (err: any) {
