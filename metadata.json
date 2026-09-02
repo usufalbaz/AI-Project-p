@@ -1,0 +1,6 @@
+{
+  "name": "منصة تأهيل مهندسي وباحثي الذكاء الاصطناعي | AI Research & Systems Platform",
+  "description": "منصة تعليم وتأهيل متقدمة لمهندسي وباحثي الذكاء الاصطناعي من العتاد والرياضيات إلى بناء وتدريب وتشغيل النماذج الضخمة (LLMs)",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
