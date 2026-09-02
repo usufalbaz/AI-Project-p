@@ -1,20 +1,16 @@
 import { GoogleGenAI } from "@google/genai";
 
-let geminiClient: GoogleGenAI | null = null;
-const getGeminiClient = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
+const getGeminiClient = (customKey?: string) => {
+  const apiKey = customKey || process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
-  if (!geminiClient) {
-    geminiClient = new GoogleGenAI({
-      apiKey,
-      httpOptions: {
-        headers: {
-          "User-Agent": "aistudio-build",
-        },
+  return new GoogleGenAI({
+    apiKey,
+    httpOptions: {
+      headers: {
+        "User-Agent": "aistudio-build",
       },
-    });
-  }
-  return geminiClient;
+    },
+  });
 };
 
 export default async function handler(req: any, res: any) {
@@ -37,12 +33,12 @@ export default async function handler(req: any, res: any) {
 
   try {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
-    const { code, lessonId } = body;
+    const { code, lessonId, apiKey } = body;
     if (!code) {
       return res.status(400).json({ error: "الكود مطلوب" });
     }
 
-    const ai = getGeminiClient();
+    const ai = getGeminiClient(apiKey);
     if (!ai) {
       return res.status(200).json({
         output: "=== Python Simulation Sandbox (Local Cluster) ===\n[PyTorch v2.3.0+cu121]\nExecution Status: SUCCESS (No syntax or dimension errors)\nTensor memory allocated: ~14.2 MB",

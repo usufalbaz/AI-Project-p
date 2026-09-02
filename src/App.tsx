@@ -6,12 +6,20 @@ import { AiMentorDrawer } from './components/AiMentorDrawer';
 import { QuizModal } from './components/QuizModal';
 import { VramCalculatorModal } from './components/VramCalculatorModal';
 import { CertificateModal } from './components/CertificateModal';
+import { ApiKeyModal, API_KEY_STORAGE_KEY } from './components/ApiKeyModal';
+import { DiplomaBanner } from './components/DiplomaBanner';
+import { DiplomaSyllabusModal } from './components/DiplomaSyllabusModal';
+import { StudentNotesDrawer } from './components/StudentNotesDrawer';
 import { allChapters, getLessonById } from './data/curriculumData';
 import { UserProgress } from './types';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 
 const PROGRESS_STORAGE_KEY = 'ai_systems_platform_progress_v1';
 
-export default function App() {
+function AppContent() {
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
+
   // Load progress from localStorage
   const [progress, setProgress] = useState<UserProgress>(() => {
     try {
@@ -27,6 +35,15 @@ export default function App() {
     };
   });
 
+  // Load API Key from localStorage
+  const [apiKey, setApiKey] = useState<string>(() => {
+    try {
+      return localStorage.getItem(API_KEY_STORAGE_KEY) || '';
+    } catch {
+      return '';
+    }
+  });
+
   // Current Active Lesson and Chapter
   const [currentChapterId, setCurrentChapterId] = useState<number>(1);
   const [currentLessonId, setCurrentLessonId] = useState<string>('1-1');
@@ -35,8 +52,24 @@ export default function App() {
   const [isAiMentorOpen, setIsAiMentorOpen] = useState(false);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const [isCertificateOpen, setIsCertificateOpen] = useState(false);
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [isSyllabusOpen, setIsSyllabusOpen] = useState(false);
+  const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [activeQuizChapterId, setActiveQuizChapterId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSaveApiKey = (newKey: string) => {
+    setApiKey(newKey);
+    try {
+      if (newKey) {
+        localStorage.setItem(API_KEY_STORAGE_KEY, newKey);
+      } else {
+        localStorage.removeItem(API_KEY_STORAGE_KEY);
+      }
+    } catch (e) {
+      console.error("Failed to save api key to localStorage", e);
+    }
+  };
 
   // Save progress changes
   useEffect(() => {
@@ -112,15 +145,29 @@ export default function App() {
   const activeQuizChapter = activeQuizChapterId ? allChapters.find(c => c.id === activeQuizChapterId) : null;
 
   return (
-    <div className="min-h-screen bg-[#0A0A0C] text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200 antialiased" dir="rtl">
+    <div className={`min-h-screen flex flex-col font-sans antialiased transition-colors ${
+      isLight 
+        ? 'bg-[#F8FAFC] text-slate-900 selection:bg-blue-200 selection:text-blue-900' 
+        : 'bg-[#0A0A0C] text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200'
+    }`} dir="rtl">
       {/* Top Navigation Header */}
       <Header
         progress={progress}
         onOpenCalculator={() => setIsCalculatorOpen(true)}
         onOpenCertificate={() => setIsCertificateOpen(true)}
         onToggleAiMentor={() => setIsAiMentorOpen(prev => !prev)}
+        onOpenApiKey={() => setIsApiKeyModalOpen(true)}
+        isApiKeyConfigured={!!apiKey}
         onSearchChange={setSearchQuery}
         searchQuery={searchQuery}
+      />
+
+      {/* edX / Coursera Style Accredited Diploma Banner */}
+      <DiplomaBanner
+        progress={progress}
+        onOpenSyllabus={() => setIsSyllabusOpen(true)}
+        onOpenCertificate={() => setIsCertificateOpen(true)}
+        onOpenNotes={() => setIsNotesOpen(true)}
       />
 
       {/* Main Workspace Layout */}
@@ -143,6 +190,7 @@ export default function App() {
           isCompleted={progress.completedLessons.includes(currentLesson.id)}
           onToggleComplete={handleToggleCompleteLesson}
           onOpenAiMentor={() => setIsAiMentorOpen(true)}
+          onOpenNotes={() => setIsNotesOpen(true)}
           onNextLesson={handleNextLesson}
           onPrevLesson={handlePrevLesson}
           hasNext={hasNext}
@@ -156,6 +204,35 @@ export default function App() {
         onClose={() => setIsAiMentorOpen(false)}
         currentLesson={currentLesson}
         currentChapter={currentChapter}
+        apiKey={apiKey}
+        onOpenApiKey={() => setIsApiKeyModalOpen(true)}
+      />
+
+      {/* API Key Configuration Modal */}
+      <ApiKeyModal
+        isOpen={isApiKeyModalOpen}
+        onClose={() => setIsApiKeyModalOpen(false)}
+        apiKey={apiKey}
+        onSaveApiKey={handleSaveApiKey}
+      />
+
+      {/* Student Notes Drawer */}
+      <StudentNotesDrawer
+        isOpen={isNotesOpen}
+        onClose={() => setIsNotesOpen(false)}
+        currentLesson={currentLesson}
+        currentChapter={currentChapter}
+      />
+
+      {/* Diploma Curriculum & Roadmap Modal */}
+      <DiplomaSyllabusModal
+        isOpen={isSyllabusOpen}
+        onClose={() => setIsSyllabusOpen(false)}
+        onSelectChapter={(chapterId, lessonId) => {
+          setCurrentChapterId(chapterId);
+          setCurrentLessonId(lessonId);
+          setIsSyllabusOpen(false);
+        }}
       />
 
       {/* Chapter Quiz Assessment Modal */}
@@ -182,5 +259,13 @@ export default function App() {
         onSaveName={handleSaveStudentName}
       />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }

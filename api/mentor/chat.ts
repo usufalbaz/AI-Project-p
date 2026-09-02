@@ -1,20 +1,16 @@
 import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 
-let geminiClient: GoogleGenAI | null = null;
-const getGeminiClient = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
+const getGeminiClient = (customKey?: string) => {
+  const apiKey = customKey || process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
-  if (!geminiClient) {
-    geminiClient = new GoogleGenAI({
-      apiKey,
-      httpOptions: {
-        headers: {
-          "User-Agent": "aistudio-build",
-        },
+  return new GoogleGenAI({
+    apiKey,
+    httpOptions: {
+      headers: {
+        "User-Agent": "aistudio-build",
       },
-    });
-  }
-  return geminiClient;
+    },
+  });
 };
 
 export default async function handler(req: any, res: any) {
@@ -38,13 +34,13 @@ export default async function handler(req: any, res: any) {
 
   try {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
-    const { message, lessonTitle, chapterTitle, contextCode, useThinking = true } = body;
+    const { message, lessonTitle, chapterTitle, contextCode, useThinking = true, apiKey } = body;
 
     if (!message) {
       return res.status(400).json({ error: "الرسالة مطلوبة" });
     }
 
-    const ai = getGeminiClient();
+    const ai = getGeminiClient(apiKey);
     const systemInstruction = `أنت "كبير مهندسي وباحثي الذكاء الاصطناعي لمنصة JINNA 5" (JINNA 5 Principal AI Systems & Research Mentor)، المنصة المتخصصة والمطورة بواسطة المهندس يوسف الباز (Automation Ai Yousuf Albaz).
 أنت مرشد أكاديمي وهندسي رفيع المستوى متخصص في أبحاث الذكاء الاصطناعي وبناء وتدريب النماذج اللغوية الضخمة (LLMs) والأنظمة الموزعة فائقة الحوسبة.
 السياق الحالي للطالب في منصة JINNA 5:

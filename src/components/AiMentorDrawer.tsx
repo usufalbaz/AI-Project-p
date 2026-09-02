@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   X, Sparkles, Send, Bot, User, BrainCircuit, Lightbulb, 
-  Copy, Check, Code2, AlertCircle, RefreshCw 
+  Copy, Check, Code2, AlertCircle, RefreshCw, Key 
 } from 'lucide-react';
 import { ChatMessage, Lesson, Chapter } from '../types';
 import { getLocalMentorResponse } from '../utils/aiMentorFallback';
@@ -11,13 +11,17 @@ interface AiMentorDrawerProps {
   onClose: () => void;
   currentLesson?: Lesson;
   currentChapter?: Chapter;
+  apiKey?: string;
+  onOpenApiKey?: () => void;
 }
 
 export const AiMentorDrawer: React.FC<AiMentorDrawerProps> = ({
   isOpen,
   onClose,
   currentLesson,
-  currentChapter
+  currentChapter,
+  apiKey,
+  onOpenApiKey
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -73,7 +77,8 @@ export const AiMentorDrawer: React.FC<AiMentorDrawerProps> = ({
             chapterTitle: currentChapter?.title,
             lessonTitle: currentLesson?.title,
             contextCode: currentLesson?.pythonCode?.code,
-            useThinking
+            useThinking,
+            apiKey
           })
         });
 
@@ -85,7 +90,41 @@ export const AiMentorDrawer: React.FC<AiMentorDrawerProps> = ({
           }
         }
       } catch (networkErr) {
-        console.warn('API endpoint unreachable, using embedded mentor engine:', networkErr);
+        console.warn('API endpoint unreachable, checking client-side options:', networkErr);
+      }
+
+      // If backend was unreachable or returned empty, but user provided their Gemini API key, call Gemini directly!
+      if (!replyText && apiKey) {
+        try {
+          const directRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                system_instruction: {
+                  parts: [{
+                    text: `أنت كبير مهندسي وباحثي الذكاء الاصطناعي لمنصة JINNA 5 المطورة بواسطة المهندس يوسف الباز (Automation Ai Yousuf Albaz). اشرح المفاهيم الهندسية، وفكك المعادلات الرياضية وأبعاد التنسورات، وأجب باحترافية عالية مع كود بايثون متقن.`
+                  }]
+                },
+                contents: [{
+                  parts: [{
+                    text: `السياق: درس (${currentLesson?.title || ''}) - فصل (${currentChapter?.title || ''}).\nسؤال المستخدم: ${query}`
+                  }]
+                }]
+              })
+            }
+          );
+          if (directRes.ok) {
+            const directData = await directRes.json();
+            const candidate = directData?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (candidate) {
+              replyText = candidate;
+            }
+          }
+        } catch (directErr) {
+          console.warn('Direct Gemini API call failed:', directErr);
+        }
       }
 
       if (!replyText) {
@@ -182,6 +221,26 @@ export const AiMentorDrawer: React.FC<AiMentorDrawerProps> = ({
           />
           <div className="w-9 h-5 bg-[#1B1B26] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-cyan-600"></div>
         </label>
+      </div>
+
+      {/* API Key Status Bar */}
+      <div className={`px-4 py-2 border-b flex items-center justify-between text-xs ${
+        apiKey 
+          ? 'bg-emerald-950/20 border-emerald-500/20 text-emerald-300' 
+          : 'bg-amber-950/20 border-amber-500/20 text-amber-300'
+      }`}>
+        <div className="flex items-center gap-1.5">
+          <Key className="w-3.5 h-3.5" />
+          <span>{apiKey ? 'مفتاح Gemini API مفعل بنجاح 🟢' : 'لم يتم حفظ مفتاح API في المتصفح 🟡'}</span>
+        </div>
+        {onOpenApiKey && (
+          <button
+            onClick={onOpenApiKey}
+            className="text-[11px] underline hover:text-white font-semibold transition-colors flex items-center gap-1"
+          >
+            <span>{apiKey ? 'تعديل المفتاح' : 'إدخال المفتاح 🔑'}</span>
+          </button>
+        )}
       </div>
 
       {/* Messages List */}

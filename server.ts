@@ -12,8 +12,8 @@ const PORT = 3000;
 app.use(express.json({ limit: "10mb" }));
 
 // Initialize Gemini Client
-const getGeminiClient = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
+const getGeminiClient = (customKey?: string) => {
+  const apiKey = customKey || process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return null;
   }
@@ -35,13 +35,13 @@ app.get("/api/health", (_req, res) => {
 // AI Mentor API with High Thinking Mode for AI Research & Systems Engineering
 app.post("/api/mentor/chat", async (req, res) => {
   try {
-    const { message, lessonTitle, chapterTitle, contextCode, useThinking = true } = req.body;
+    const { message, lessonTitle, chapterTitle, contextCode, useThinking = true, apiKey } = req.body;
 
     if (!message) {
       return res.status(400).json({ error: "الرسالة مطلوبة" });
     }
 
-    const ai = getGeminiClient();
+    const ai = getGeminiClient(apiKey);
     const systemInstruction = `أنت "كبير مهندسي وباحثي الذكاء الاصطناعي لمنصة JINNA 5" (JINNA 5 Principal AI Systems & Research Mentor)، المنصة المتخصصة والمطورة بواسطة المهندس يوسف الباز (Automation Ai Yousuf Albaz).
 أنت مرشد أكاديمي وهندسي رفيع المستوى متخصص في أبحاث الذكاء الاصطناعي وبناء وتدريب النماذج اللغوية الضخمة (LLMs) والأنظمة الموزعة فائقة الحوسبة.
 السياق الحالي للطالب في منصة JINNA 5:

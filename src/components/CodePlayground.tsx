@@ -38,10 +38,11 @@ export const CodePlayground: React.FC<CodePlaygroundProps> = ({
     setOutput("جاري تجهيز بيئة الحوسبة ومحاكاة مفسر PyTorch 2.4 GPU Engine...");
 
     try {
+      const storedApiKey = typeof window !== 'undefined' ? localStorage.getItem('jinna_gemini_api_key') : null;
       const res = await fetch("/api/code/simulate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, lessonId })
+        body: JSON.stringify({ code, lessonId, apiKey: storedApiKey || undefined })
       });
       const contentType = res.headers.get("content-type") || "";
       if (res.ok && contentType.includes("application/json")) {
