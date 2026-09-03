@@ -5,6 +5,7 @@ import { getTotalCurriculumStats } from '../data/curriculumData';
 import { JinnaLogo } from './JinnaLogo';
 import { ThemeToggle } from './ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
+import { LivePlatformStats } from './LivePlatformStats';
 
 interface HeaderProps {
   progress: UserProgress;
@@ -189,20 +190,27 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Progress Metric Bar */}
-      <div className={`max-w-7xl mx-auto mt-2 pt-2 border-t flex items-center justify-between gap-4 text-xs ${
+      {/* Progress Metric Bar & Live Platform Statistics */}
+      <div className={`max-w-7xl mx-auto mt-2 pt-2 border-t flex flex-col md:flex-row items-center justify-between gap-3 text-xs ${
         isLight ? 'border-slate-200 text-slate-600' : 'border-white/[0.06] text-slate-400'
       }`}>
-        <div className="flex items-center gap-2">
-          <BookOpen className="w-3.5 h-3.5 text-cyan-500" />
-          <span>المسار التعليمي: {stats.totalChapters} فصول متدرجة | {stats.totalLessons} درساً تطبيقياً | {stats.totalHours} ساعة تدريبية مكثفة</span>
+        <div className="flex items-center gap-3 flex-wrap w-full md:w-auto justify-between md:justify-start">
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-3.5 h-3.5 text-cyan-500" />
+            <span className="hidden lg:inline">المسار التعليمي: {stats.totalChapters} فصول | {stats.totalLessons} درساً ({stats.totalHours} س)</span>
+            <span className="lg:hidden font-medium">JINNA 5</span>
+          </div>
+
+          {/* Real-time online, student, and visitor counter */}
+          <LivePlatformStats variant="header" />
         </div>
-        <div className="flex items-center gap-3">
+
+        <div className="flex items-center gap-3 self-end md:self-auto">
           <div className="flex items-center gap-1.5">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
             <span>مكتمل: {completedCount}/{stats.totalLessons}</span>
           </div>
-          <div className={`w-24 rounded-full h-2 overflow-hidden border ${
+          <div className={`w-20 sm:w-24 rounded-full h-2 overflow-hidden border ${
             isLight ? 'bg-slate-200 border-slate-300' : 'bg-[#14141B] border-white/[0.08]'
           }`}>
             <div

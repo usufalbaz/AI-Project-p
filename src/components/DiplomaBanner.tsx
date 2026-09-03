@@ -6,6 +6,7 @@ import {
 import { UserProgress } from '../types';
 import { getTotalCurriculumStats } from '../data/curriculumData';
 import { useTheme } from '../context/ThemeContext';
+import { LivePlatformStats } from './LivePlatformStats';
 
 interface DiplomaBannerProps {
   progress: UserProgress;
@@ -122,14 +123,18 @@ export const DiplomaBanner: React.FC<DiplomaBannerProps> = ({
           </div>
         </div>
 
-        {/* Collapsible edX Specialization details */}
+        {/* Collapsible edX Specialization details & Real-time Community Metrics */}
         {isExpanded && (
-          <div className={`mt-3 pt-3 border-t grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs animate-fadeIn ${
-            isLight ? 'border-slate-200 text-slate-600' : 'border-white/[0.06] text-slate-300'
-          }`}>
-            <div className={`p-2.5 rounded-lg border ${
-              isLight ? 'bg-white border-slate-200' : 'bg-[#12131C] border-white/[0.06]'
+          <div className="mt-3 pt-3 border-t animate-fadeIn">
+            {/* Live Platform Users, Enrolled Students, and Total Visitors */}
+            <LivePlatformStats variant="banner" />
+
+            <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs mt-2 ${
+              isLight ? 'text-slate-600' : 'text-slate-300'
             }`}>
+              <div className={`p-2.5 rounded-lg border ${
+                isLight ? 'bg-white border-slate-200' : 'bg-[#12131C] border-white/[0.06]'
+              }`}>
               <div className="font-semibold flex items-center gap-1.5 text-cyan-400">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>المشرف والمطور الأكاديمي</span>
@@ -175,7 +180,8 @@ export const DiplomaBanner: React.FC<DiplomaBannerProps> = ({
               </p>
             </div>
           </div>
-        )}
+        </div>
+      )}
       </div>
     </div>
   );
