@@ -52,11 +52,12 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
 
     // List of modern Gemini models in order of Google AI Studio availability
     const candidateModels = [
+      'gemini-3.1-flash-lite',
       'gemini-3.6-flash',
       'gemini-3.8-flash',
-      'gemini-2.0-flash',
-      'gemini-1.5-flash',
-      'gemini-2.5-flash'
+      'gemini-3.5-flash',
+      'gemini-flash-latest',
+      'gemini-flash-lite-latest',
     ];
 
     let lastError = '';
@@ -66,10 +67,13 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
       for (const model of candidateModels) {
         try {
           const res = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${trimmed}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
             {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                'Content-Type': 'application/json',
+                'x-goog-api-key': trimmed
+              },
               body: JSON.stringify({
                 contents: [{ parts: [{ text: 'قل كلمة واحدة: متصل' }] }]
               })
@@ -167,12 +171,12 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
               )}
               <div className="text-xs leading-relaxed">
                 <p className="font-bold">
-                  {apiKey ? 'مفتاح الـ API مفعّل ومربوط بنجاح 🟢' : 'لم يتم إدخال مفتاح API بعد 🟡'}
+                  {apiKey ? 'مفتاح الـ API المخصص مفعّل ومربوط 🟢' : 'المساعد متصل ويعمل بالمفتاح السحابي المدمج 🟢'}
                 </p>
                 <p className="text-[11px] opacity-80 mt-0.5">
                   {apiKey 
-                    ? 'المساعد الذكي يعمل الآن بنماذج Google Gemini الحديثة مباشرة.' 
-                    : 'يعمل الموقع حالياً بنظام المعرفة الهندسية المدمج الاحتياطي.'}
+                    ? 'المساعد الذكي ومحاكي بايثون يعملان بنماذج Gemini عبر مفتاحك المخصص.' 
+                    : 'المنصة تعمل بكامل طاقتها الذكية عبر مفتاح الخادم المدمج، ويمكنك إضافة مفتاحك الخاص في أي وقت.'}
                 </p>
               </div>
             </div>

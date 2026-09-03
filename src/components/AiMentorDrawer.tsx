@@ -27,13 +27,14 @@ export const AiMentorDrawer: React.FC<AiMentorDrawerProps> = ({
     {
       id: 'welcome',
       role: 'assistant',
-      content: `مرحباً بك يا زميلي في منصة JINNA 5 لأبحاث وهندسة الذكاء الاصطناعي (المطورة بواسطة المهندس يوسف الباز - Automation Ai Yousuf Albaz)!
-أنا المساعد الذكي المتقدم (JINNA 5 Principal AI Mentor)، ومزود بنمط التفكير فائق العمق (High Thinking Mode) للإجابة على أصعب المسائل:
-- تفكيك المعادلات الرياضية المعقدة (SVD, Backprop, Attention, RoPE, DPO).
-- تحليل أبعاد التنسورات ومحاكاة استهلاك الـ VRAM في عناقيد الـ GPUs.
-- تحضيرك لأسئلة المقابلات الهندسية الدقيقة في كبرى الشركات (Meta, OpenAI, Google DeepMind).
+      content: `مرحباً بك يا باشمهندس يوسف! أنا مساعدك الذكي المباشر لمنصة JINNA 5، مبني على محرك **Gemini 3.8 Flash** فائق السرعة.
 
-كيف يمكنني مساعدتك في درس اليوم؟`,
+جاهز لمساعدتك بذكاء ومرونة في:
+- الإجابة الفورية والمنطقية على أي استفسار تقني، برمجي، أو سؤال عام.
+- شرح وتطوير أكواد بايثون والذكاء الاصطناعي ومعمارية المحولات (Transformers) وCUDA.
+- تفكيك أي معادلة رياضية أو فكرة معمارية تريد مناقشتها كمهندس وزميل.
+
+إيه اللي تحب نشتغل عليه أو نناقشه دلوقتي؟`,
       timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -68,15 +69,34 @@ export const AiMentorDrawer: React.FC<AiMentorDrawerProps> = ({
 
     try {
       let replyText = '';
+      const conversationHistory = messages.slice(-8).map(m => ({ role: m.role, content: m.content }));
+
+      // Live client wall-clock data
+      const now = new Date();
+      const userZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Africa/Cairo';
+      const timeInfo = {
+        currentTime: now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', hour12: true }),
+        currentDate: now.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+        timeZone: userZone,
+        cairoTime: now.toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo', hour: '2-digit', minute: '2-digit', hour12: true }),
+        riyadhTime: now.toLocaleTimeString('ar-EG', { timeZone: 'Asia/Riyadh', hour: '2-digit', minute: '2-digit', hour12: true }),
+        tokyoTime: now.toLocaleTimeString('ar-EG', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hour12: true }),
+        dubaiTime: now.toLocaleTimeString('ar-EG', { timeZone: 'Asia/Dubai', hour: '2-digit', minute: '2-digit', hour12: true }),
+        londonTime: now.toLocaleTimeString('ar-EG', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: true }),
+        newYorkTime: now.toLocaleTimeString('ar-EG', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: true })
+      };
+
       try {
         const res = await fetch('/api/mentor/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             message: query,
+            history: conversationHistory,
             chapterTitle: currentChapter?.title,
             lessonTitle: currentLesson?.title,
             contextCode: currentLesson?.pythonCode?.code,
+            timeInfo,
             useThinking,
             apiKey
           })
@@ -93,36 +113,71 @@ export const AiMentorDrawer: React.FC<AiMentorDrawerProps> = ({
         console.warn('API endpoint unreachable, checking client-side options:', networkErr);
       }
 
-      // If backend was unreachable or returned empty, but user provided their Gemini API key, call Gemini directly!
+      // If backend was unreachable but user provided their Gemini API key, call Gemini directly with x-goog-api-key header!
       if (!replyText && apiKey) {
-        const preferredModel = (typeof window !== 'undefined' && localStorage.getItem('jinna_gemini_model')) || 'gemini-3.6-flash';
-        const candidateModels = Array.from(new Set([
-          preferredModel,
-          'gemini-3.6-flash',
+        const candidateModels = [
           'gemini-3.8-flash',
-          'gemini-2.0-flash',
-          'gemini-1.5-flash',
-          'gemini-2.5-flash'
-        ]));
+          'gemini-3.1-flash-lite',
+          'gemini-3.6-flash',
+          'gemini-flash-latest'
+        ];
+
+        const directSystemInstruction = `أنت المساعد الذكي ومهندس الأنظمة لمنصة JINNA 5 المطورة بواسطة المهندس يوسف الباز (Automation Ai Yousuf Albaz).
+أنت مساعد ذكي، سريع، مرن، وطبيعي تماماً (مثل Gemini و ChatGPT).
+
+[🕒 بيانات ساعة النظام والوقت اللحظي الحي]:
+- التوقيت الحالي لجهاز المستخدم (${timeInfo.timeZone}): ${timeInfo.currentTime}
+- التاريخ الحالي: ${timeInfo.currentDate}
+- الوقت الحالي في القاهرة: ${timeInfo.cairoTime}
+- الوقت الحالي في مكة المكرمة / الرياض: ${timeInfo.riyadhTime}
+- الوقت الحالي في دبي: ${timeInfo.dubaiTime}
+- الوقت الحالي في لندن: ${timeInfo.londonTime}
+- الوقت الحالي في نيويورك: ${timeInfo.newYorkTime}
+- الوقت الحالي في طوكيو: ${timeInfo.tokyoTime}
+
+قواعد التوقيت وساعة النظام:
+- لديك وصول كامل وحي لساعة النظام والتوقيت اللحظي عبر البيانات الحية أعلاه.
+- إذا سألك المستخدم "الساعة كام؟" أو "في القاهرة؟": أجب فوراً بالوقت الدقيق بالدقيقة بناءً على هذه البيانات. ممنوع تماماً أن تقول "ليس لدي وصول للتوقيت الحي" أو "انظر للموبايل".
+
+- أجب على سؤال المستخدم مباشرة وبشكل منطقي وبذكاء كزميل مهندس.
+- إذا كان السؤال تحية أو سؤالاً عاماً (مثل: "ايه الاخبار" أو "الساعة كام"): أجب بود ومباشرة دون إقحام مواضيع معقدة أو شروح غير مطلوبة.
+- إذا كان السؤال برمجياً أو هندسياً أو في الذكاء الاصطناعي: اشرح بدقة واحترافية وإيجاز وافٍ مع كود متقن عند الحاجة فقط.
+${currentLesson ? `[سياق إرشادي: المستخدم في درس "${currentLesson.title}" - استخدمه فقط إذا كان السؤال متعلقاً به].` : ''}`;
+
+        // Build contents with history
+        const directContents: any[] = [];
+        for (const h of conversationHistory) {
+          directContents.push({
+            role: h.role === 'user' ? 'user' : 'model',
+            parts: [{ text: h.content }]
+          });
+        }
+        directContents.push({
+          role: 'user',
+          parts: [{ text: query }]
+        });
 
         for (const model of candidateModels) {
           try {
+            const timeoutMs = model === 'gemini-3.8-flash' ? 5000 : 7000;
             const directRes = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+              `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
               {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'x-goog-api-key': apiKey
+                },
+                signal: AbortSignal.timeout(timeoutMs),
                 body: JSON.stringify({
                   system_instruction: {
-                    parts: [{
-                      text: `أنت كبير مهندسي وباحثي الذكاء الاصطناعي لمنصة JINNA 5 المطورة بواسطة المهندس يوسف الباز (Automation Ai Yousuf Albaz). اشرح المفاهيم الهندسية، وفكك المعادلات الرياضية وأبعاد التنسورات، وأجب باحترافية عالية مع كود بايثون متقن.`
-                    }]
+                    parts: [{ text: directSystemInstruction }]
                   },
-                  contents: [{
-                    parts: [{
-                      text: `السياق: درس (${currentLesson?.title || ''}) - فصل (${currentChapter?.title || ''}).\nسؤال المستخدم: ${query}`
-                    }]
-                  }]
+                  contents: directContents,
+                  generationConfig: {
+                    temperature: 0.7,
+                    maxOutputTokens: 2048,
+                  }
                 })
               }
             );
@@ -131,9 +186,6 @@ export const AiMentorDrawer: React.FC<AiMentorDrawerProps> = ({
               const candidate = directData?.candidates?.[0]?.content?.parts?.[0]?.text;
               if (candidate) {
                 replyText = candidate;
-                if (typeof window !== 'undefined') {
-                  localStorage.setItem('jinna_gemini_model', model);
-                }
                 break;
               }
             }
@@ -204,12 +256,12 @@ export const AiMentorDrawer: React.FC<AiMentorDrawerProps> = ({
           <div>
             <div className="flex items-center gap-1.5">
               <h3 className="text-sm font-bold text-slate-100">مساعد JINNA 5 الذكي (AI Systems Mentor)</h3>
-              <span className="px-1.5 py-0.2 rounded text-[10px] bg-indigo-950/70 text-indigo-300 border border-indigo-700/50 font-mono">
-                Gemini 3.1 Pro
+              <span className="px-1.5 py-0.2 rounded text-[10px] bg-cyan-950/80 text-cyan-300 border border-cyan-700/50 font-mono font-semibold">
+                Gemini 3.8 Flash
               </span>
             </div>
             <p className="text-[11px] text-slate-400">
-              {currentLesson ? `السياق: ${currentLesson.title}` : 'مرشد JINNA 5 المتخصص • م. يوسف الباز'}
+              {currentLesson ? `السياق: ${currentLesson.title}` : 'المساعد الذكي المباشر • م. يوسف الباز'}
             </p>
           </div>
         </div>
@@ -325,7 +377,7 @@ export const AiMentorDrawer: React.FC<AiMentorDrawerProps> = ({
               <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
               <span>
                 {useThinking
-                  ? "جاري التفكير وحساب أبعاد التنسورات وصياغة التحليل الهندسي المتقدم..."
+                  ? "المساعد يفكر ويصيغ الرد بذكاء..."
                   : "جاري توليد الاستجابة..."}
               </span>
             </div>
@@ -362,7 +414,7 @@ export const AiMentorDrawer: React.FC<AiMentorDrawerProps> = ({
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="اسأل عن أي مفهوم رياضي، معادلة، كود CUDA، أو LLaMA 3..."
+            placeholder="اسأل عن أي فكرة برمجية أو ذكاء اصطناعي، أو دردش بحرية..."
             disabled={isLoading}
             className="flex-1 bg-[#0A0A0E] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30 transition-all"
           />

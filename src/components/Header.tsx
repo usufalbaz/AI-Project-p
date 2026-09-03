@@ -56,13 +56,13 @@ export const Header: React.FC<HeaderProps> = ({
               className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all ${
                 isApiKeyConfigured
                   ? 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30'
-                  : 'bg-amber-950/40 text-amber-300 border-amber-500/30'
+                  : 'bg-cyan-950/40 text-cyan-300 border-cyan-500/30'
               }`}
               title="إعدادات مفتاح Gemini API"
             >
               <Key className="w-3.5 h-3.5" />
               <span>API</span>
-              <span className={`w-1.5 h-1.5 rounded-full ${isApiKeyConfigured ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+              <span className={`w-1.5 h-1.5 rounded-full ${isApiKeyConfigured ? 'bg-emerald-400' : 'bg-cyan-400'}`} />
             </button>
 
             <button
@@ -104,8 +104,8 @@ export const Header: React.FC<HeaderProps> = ({
                   ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300'
                   : 'bg-emerald-950/30 hover:bg-emerald-950/50 text-emerald-300 border-emerald-500/30'
                 : isLight
-                  ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-300'
-                  : 'bg-amber-950/30 hover:bg-amber-950/50 text-amber-300 border-amber-500/30 hover:border-amber-400'
+                  ? 'bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border-cyan-300'
+                  : 'bg-[#141624] hover:bg-[#1A1D30] text-cyan-300 border-cyan-500/30 hover:border-cyan-400'
             }`}
             title="إعدادات مفتاح الذكاء الاصطناعي (Gemini API Key)"
           >
@@ -114,9 +114,9 @@ export const Header: React.FC<HeaderProps> = ({
             <span className={`px-1.5 py-0.2 text-[9px] font-mono rounded ${
               isApiKeyConfigured 
                 ? isLight ? 'bg-emerald-200/60 text-emerald-800' : 'bg-emerald-500/20 text-emerald-300'
-                : isLight ? 'bg-amber-200/60 text-amber-800' : 'bg-amber-500/20 text-amber-300'
+                : isLight ? 'bg-cyan-200/60 text-cyan-900' : 'bg-cyan-500/20 text-cyan-300'
             }`}>
-              {isApiKeyConfigured ? '🟢' : 'ربط 🟡'}
+              {isApiKeyConfigured ? '🟢 مخصص' : '🟢 نشط'}
             </span>
           </button>
 

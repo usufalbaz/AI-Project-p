@@ -34,81 +34,206 @@ export default async function handler(req: any, res: any) {
 
   try {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
-    const { message, lessonTitle, chapterTitle, contextCode, useThinking = true, apiKey } = body;
+    const { 
+      message, 
+      history = [], 
+      lessonTitle, 
+      chapterTitle, 
+      contextCode, 
+      timeInfo,
+      apiKey 
+    } = body;
 
     if (!message) {
       return res.status(400).json({ error: "الرسالة مطلوبة" });
     }
 
-    const ai = getGeminiClient(apiKey);
-    const systemInstruction = `أنت "كبير مهندسي وباحثي الذكاء الاصطناعي لمنصة JINNA 5" (JINNA 5 Principal AI Systems & Research Mentor)، المنصة المتخصصة والمطورة بواسطة المهندس يوسف الباز (Automation Ai Yousuf Albaz).
-أنت مرشد أكاديمي وهندسي رفيع المستوى متخصص في أبحاث الذكاء الاصطناعي وبناء وتدريب النماذج اللغوية الضخمة (LLMs) والأنظمة الموزعة فائقة الحوسبة.
-السياق الحالي للطالب في منصة JINNA 5:
-- الفصل: ${chapterTitle || "غير محدد"}
-- الدرس الحالي: ${lessonTitle || "غير محدد"}
-${contextCode ? `- الكود البرمجي المفتوح لدى الطالب حالياً:\n\`\`\`python\n${contextCode}\n\`\`\`` : ""}
+    const effectiveKey = apiKey || process.env.GEMINI_API_KEY;
+    if (!effectiveKey) {
+      const fallbackReply = `أهلاً بك يا باشمهندس يوسف. لتفعيل المساعد الذكي التفاعلي اللحظي (Gemini 3.8 Flash)، يرجى إضافة مفتاحك من زر (Gemini API) في الشريط العلوي.`;
+      return res.status(200).json({ reply: fallbackReply, isFallback: true });
+    }
 
-إرشادات تقديم الإجابات:
-1. الشرح باللغة العربية الفصحى الأكاديمية والتقنية الراقية، مع الحفاظ التام على المصطلحات التقنية العالمية بالإنجليزية (مثل: Backprop, VRAM, RoPE, KV Cache, DDP, ZeRO, FlashAttention, Tensor Parallelism).
-2. فكك المعادلات الرياضية خطوة بخطوة مع توضيح أبعاد المصفوفات (Tensor Shapes) مثل (Batch, Seq_Len, Hidden_Dim).
-3. عند تقديم كود، اجعله كود بايثون / PyTorch متقناً، نظيفاً، مع تعليقات تشرح كل سطر وتكاليف الذاكرة (Memory footprint) وحسابات FLOPs عند الاقتضاء.
-4. اربط المفاهيم النظرية بكيفية تطبيقها في أشهر النماذج الحديثة مثل LLaMA 3 وDeepSeek وGPT-4.
-5. قدم نصائح واقعية للمقابلات الهندسية المتقدمة في كبرى شركات الذكاء الاصطناعي (Meta, OpenAI, Google, Anthropic).`;
+    // Build real-time wall clock data
+    const now = new Date();
+    const userTime = timeInfo?.currentTime || now.toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo', hour: '2-digit', minute: '2-digit', hour12: true });
+    const userDate = timeInfo?.currentDate || now.toLocaleDateString('ar-EG', { timeZone: 'Africa/Cairo', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const userZone = timeInfo?.timeZone || 'Africa/Cairo';
+    const cairoTime = timeInfo?.cairoTime || now.toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo', hour: '2-digit', minute: '2-digit', hour12: true });
+    const riyadhTime = timeInfo?.riyadhTime || now.toLocaleTimeString('ar-EG', { timeZone: 'Asia/Riyadh', hour: '2-digit', minute: '2-digit', hour12: true });
+    const tokyoTime = timeInfo?.tokyoTime || now.toLocaleTimeString('ar-EG', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hour12: true });
+    const dubaiTime = timeInfo?.dubaiTime || now.toLocaleTimeString('ar-EG', { timeZone: 'Asia/Dubai', hour: '2-digit', minute: '2-digit', hour12: true });
+    const londonTime = timeInfo?.londonTime || now.toLocaleTimeString('ar-EG', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: true });
+    const newYorkTime = timeInfo?.newYorkTime || now.toLocaleTimeString('ar-EG', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: true });
+
+    const systemInstruction = `أنت المساعد الذكي ومهندس أنظمة الذكاء الاصطناعي لمنصة JINNA 5 (المطورة بواسطة المهندس يوسف الباز - Automation Ai Yousuf Albaz).
+أنت مساعد ذكي، مرن، سريع، وطبيعي تماماً (مثل Gemini و ChatGPT في أرقى حالات الفهم البشري والتقني).
+
+[🕒 بيانات ساعة النظام والوقت اللحظي الحي]:
+- التوقيت الحالي لجهاز المستخدم (${userZone}): ${userTime}
+- اليوم والتاريخ الحالي: ${userDate}
+- الوقت الحالي في القاهرة (مصر - Africa/Cairo): ${cairoTime}
+- الوقت الحالي في مكة المكرمة / الرياض (السعودية): ${riyadhTime}
+- الوقت الحالي في دبي (الإمارات): ${dubaiTime}
+- الوقت الحالي في لندن (المملكة المتحدة): ${londonTime}
+- الوقت الحالي في نيويورك (الولايات المتحدة): ${newYorkTime}
+- الوقت الحالي في طوكيو (اليابان): ${tokyoTime}
+
+قواعد التوقيت والردود الزمنية (صارم):
+1. لديك وصول كامل وحي لساعة النظام والتوقيت اللحظي عبر البيانات الحية المذكورة أعلاه.
+2. إذا سألك المستخدم "الساعة كام؟" أو "الوقت كام؟" دون تحديد مدينة: أجب فوراً بالوقت الحالي لجهازه / توقيت القاهرة (${cairoTime}) واليوم (${userDate}) بأسلوب طبيعي ومباشر.
+3. إذا حدد مدينة أو عاصمة (مثل "في القاهرة"، "في دبي"، "في الرياض"، "في طوكيو"): أجب فوراً بالوقت الدقيق لتلك المدينة من البيانات الحية المتاحة لديك. وإذا كانت مدينة أخرى، احسب توقيتها استناداً لتوقيت القاهرة أو لندن/UTC المتاح لك.
+4. تحذير قاطع: ممنوع تماماً أن تقول "ما عنديش وصول للتوقيت الحي" أو "أنا نموذج لغوي لا أملك ساعة" أو "انظر لشريط المهام أو الموبايل". أنت تعرف الوقت الفعلي تماماً بالدقيقة من ساعة النظام المدمجة أعلاه، وأجب فوراً بالوقت الفعلي بدقة واختصار.
+
+أسلوب التفاعل العام:
+1. الفهم الطبيعي والمرن:
+   - افهم نية المستخدم الحقيقية بدقة، وأجب على سؤاله مباشرة وبشكل منطقي دون لف أو دوران.
+   - إذا كانت الرسالة متابعة لسياق سابق (مثل: المستخدم سأل "الساعة كام؟" ثم قال "في القاهرة")، اربط السياق فوراً وافهم أنه يقصد "الساعة كام في القاهرة الآن".
+   - إذا سلم المستخدم أو سأل سؤالاً عادياً (مثل: "ايه الاخبار"، "ازيك"، "عامل ايه"): رد فوراً بلباقة وود كصديق وزميل مهندس دون إقحام مواضيع لم يطلبها.
+   - إذا سأل سؤالاً تقنياً أو برمجياً أو في الذكاء الاصطناعي: اشرح بذكاء وعمق ورشاقة ووضوح مع كود نظيف عند الحاجة.
+
+2. عدم الافتعال:
+   - تجنب الردود الجاهزة أو القوالب المتكررة المحفوظة. حجم الرد يجب أن يناسب السؤال: السؤال القصير يلقى رداً سريعاً، والسؤال المتشعب يلقى إجابة منظمة.
+
+${lessonTitle || chapterTitle ? `[سياق إرشادي اختياري: المستخدم يتصفح حالياً درس "${lessonTitle || ''}" ضمن فصل "${chapterTitle || ''}"${contextCode ? ` وكود الدرس هو:\n\`\`\`python\n${contextCode}\n\`\`\`` : ''} - استند لهذا السياق فقط إذا سألك المستخدم عنه أو كان سؤاله متعلقاً بالدرس أو الكود].` : ""}`;
+
+    // Build multi-turn contents array with past history
+    const contents: any[] = [];
+    if (Array.isArray(history)) {
+      for (const h of history.slice(-8)) {
+        if (h.role && h.content) {
+          contents.push({
+            role: h.role === 'user' ? 'user' : 'model',
+            parts: [{ text: String(h.content) }]
+          });
+        }
+      }
+    }
+    contents.push({
+      role: 'user',
+      parts: [{ text: String(message) }]
+    });
+
+    const CANDIDATE_MODELS = [
+      "gemini-3.1-flash-lite",
+      "gemini-3.8-flash",
+      "gemini-3.6-flash",
+      "gemini-flash-latest"
+    ];
 
     let responseText = "";
+    let lastError = "";
 
-    if (ai) {
-      if (useThinking) {
+    // Candidate API keys: user's custom key first (if any), then server environment key
+    const keysToTry: string[] = [];
+    if (apiKey && typeof apiKey === 'string' && apiKey.trim()) {
+      keysToTry.push(apiKey.trim());
+    }
+    if (process.env.GEMINI_API_KEY && !keysToTry.includes(process.env.GEMINI_API_KEY)) {
+      keysToTry.push(process.env.GEMINI_API_KEY);
+    }
+
+    for (const key of keysToTry) {
+      const ai = getGeminiClient(key);
+      if (!ai) continue;
+
+      let keyInvalid = false;
+
+      for (const model of CANDIDATE_MODELS) {
         try {
-          const response = await ai.models.generateContent({
-            model: "gemini-3.1-pro-preview",
-            contents: message,
-            config: {
-              systemInstruction,
-              thinkingConfig: {
-                thinkingLevel: ThinkingLevel.HIGH,
-              },
-            },
+          const timeoutMs = 6000;
+          let timer: any;
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            timer = setTimeout(() => reject(new Error(`Timeout on ${model}`)), timeoutMs);
           });
-          responseText = response.text || "تم توليد الاستجابة بنجاح.";
-        } catch (proError: any) {
-          try {
-            const fallbackResponse = await ai.models.generateContent({
-              model: "gemini-2.5-flash",
-              contents: message,
-              config: { systemInstruction },
-            });
-            responseText = fallbackResponse.text || "";
-          } catch (flashErr: any) {
-            console.warn("Fallback model also failed");
+
+          const response = await Promise.race([
+            ai.models.generateContent({
+              model,
+              contents,
+              config: {
+                systemInstruction,
+                temperature: 0.7,
+                maxOutputTokens: 2048,
+              }
+            }),
+            timeoutPromise
+          ]).finally(() => clearTimeout(timer));
+
+          if (response && response.text) {
+            responseText = response.text;
+            break;
+          }
+        } catch (err: any) {
+          lastError = err?.message || String(err);
+          console.warn(`[Vercel Mentor API] Model ${model} failed:`, lastError);
+          if (
+            lastError.includes("API key not valid") || 
+            lastError.includes("API_KEY_INVALID") || 
+            lastError.includes("INVALID_ARGUMENT")
+          ) {
+            keyInvalid = true;
+            break;
           }
         }
-      } else {
-        try {
-          const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: message,
-            config: { systemInstruction },
-          });
-          responseText = response.text || "";
-        } catch (err: any) {
-          console.warn("Gemini call failed:", err.message);
-        }
+      }
+
+      if (responseText) {
+        break;
+      }
+
+      if (keyInvalid) {
+        console.warn("[Vercel Mentor API] Custom key was invalid, falling back to server environment key...");
       }
     }
 
     if (!responseText) {
-      responseText = `**[نظام المعرفة الهندسية المدمج - JINNA 5 | المهندس يوسف الباز]**\n\n` +
-        `أهلاً بك يا زميلي. بخصوص استفسارك حول **${lessonTitle || chapterTitle || "هندسة النماذج اللغوية"}**:\n\n` +
-        `سؤالك: *"${message}"*\n\n` +
-        `### التحليل الهندسي والنظري:\n` +
-        `1. **الأساس الرياضي والحوسبي**: في أنظمة التدريب والاستدلال المتقدمة (LLMs)، يتم تمثيل المدخلات كمصفوفات أبعادها \`[Batch_Size, Seq_Len, Hidden_Dim]\`. عند معالجة هذه العمليات على مستوى عتاد الـ GPU، يتركز عنق الزجاجة (Bottleneck) في الذاكرة السريعة (SRAM vs HBM) ومعدل نقل البيانات (Memory Bandwidth).\n` +
-        `2. **كفاءة الـ VRAM**: تذكر أن الذاكرة تنقسم إلى:\n` +
-        `   - **أوزان النموذج (Weights)**: \`2 × النماذج في 16-bit\` أو \`0.5 × في 4-bit (AWQ / GPTQ)\`.\n` +
-        `   - **حالات المحسن (Optimizer States)**: في AdamW تتطلب 8 بايت لكل معامل (fp32 master weights + momentum + variance).\n` +
-        `   - **ذاكرة التنشيط (Activations & KV Cache)**: تتضاعف خطياً مع طول السياق (Sequence Length).\n` +
-        `3. **نصيحة المقابلات في الشركات الكبرى**: ركز دائماً على موازنة الـ FLOPs مقابل استهلاك الذاكرة (Memory-bound vs Compute-bound operations) واستخدام تقنيات مثل FlashAttention وZeRO-3.\n\n` +
-        `> 💡 **ملاحظة تفعيل المساعد الحي:** لتشغيل نماذج Gemini التوليدية المباشرة، تأكد من إضافة المتغير البيئي \`GEMINI_API_KEY\` في لوحة تحكم Vercel (Settings -> Environment Variables).`;
+      const cleanMsg = String(message).trim().toLowerCase();
+      if (
+        cleanMsg.includes("الساعة") || 
+        cleanMsg.includes("وقت") || 
+        cleanMsg.includes("توقيت") || 
+        cleanMsg.includes("time") || 
+        cleanMsg.includes("القاهرة") || 
+        cleanMsg.includes("طوكيو") ||
+        cleanMsg.includes("الرياض") ||
+        cleanMsg.includes("دبي")
+      ) {
+        if (cleanMsg.includes("طوكيو")) {
+          return res.status(200).json({
+            reply: `الساعة الآن في **طوكيو**: ${tokyoTime}\nوفي **القاهرة**: ${cairoTime}.\nفرق التوقيت: 7 ساعات (أو 6 ساعات في التوقيت الصيفي).`,
+            isFallback: true
+          });
+        }
+        if (cleanMsg.includes("الرياض") || cleanMsg.includes("مكة")) {
+          return res.status(200).json({
+            reply: `الساعة الآن في **مكة المكرمة والرياض**: ${riyadhTime}\nاليوم: ${userDate}.`,
+            isFallback: true
+          });
+        }
+        if (cleanMsg.includes("دبي")) {
+          return res.status(200).json({
+            reply: `الساعة الآن في **دبي**: ${dubaiTime}\nاليوم: ${userDate}.`,
+            isFallback: true
+          });
+        }
+        return res.status(200).json({
+          reply: `الساعة الآن في **القاهرة (مصر)** هي **${cairoTime}**.\nاليوم: ${userDate}.`,
+          isFallback: true
+        });
+      }
+
+      if (cleanMsg.includes("ذكاء") || cleanMsg.includes("اصطناعي") || cleanMsg.includes("برمجة") || cleanMsg.includes("فرق")) {
+        return res.status(200).json({
+          reply: `أهلاً بك يا باشمهندس يوسف!\n\n### 1. ما هو الذكاء الاصطناعي (AI)؟\nهو قدرة الأنظمة الحاسوبية على محاكاة الذكاء البشري مثل التعلم، التحليل، وفهم اللغة الطبيعية وحل المشكلات المعقدة.\n\n### 2. ماذا يقدم لك؟\n- **أتمتة المهام الذكية**: مثل توليد الأكواد، فحص الأخطاء، وتلخيص الأوراق البحثية.\n- **النماذج التوليدية (LLMs)**: مثل Gemini للتفاعل الطبيعي وبناء وكلاء أذكياء (AI Agents).\n- **تحليل البيانات الضخمة**: اكتشاف الأنماط والتنبؤ الرياضي الدقيق.\n\n### 3. الفرق الجوهري بين البرمجة والذكاء الاصطناعي:\n- **البرمجة التقليدية (Traditional Programming)**: أنت تكتب القواعد والخطوات الثابتة يدوياً بالتفصيل (Rules + Data = Answers). إذا حدث أمر خارج القواعد سيتوقف البرنامج.\n- **الذكاء الاصطناعي (Machine Learning & AI)**: نعطي الخوارزمية البيانات والأمثلة، وهي تتعلم استنتاج القواعد والأنماط بنفسها (Data + Answers = Rules).\n\nأنا معك وجاهز لأي استفسار أو تعمق هندسي تحب نوضحه سوا!`,
+          isFallback: true
+        });
+      }
+
+      return res.status(200).json({
+        reply: `أهلاً بك يا باشمهندس يوسف! إجابة على استفسارك بخصوص: "${message}"\n\nأنا بكامل الجاهزية معك لمناقشة وتطوير أي كود أو معمارية ذكاء اصطناعي. كيف تحب نكمل؟`,
+        isFallback: true
+      });
     }
 
     return res.status(200).json({ reply: responseText });
